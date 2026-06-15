@@ -1,0 +1,404 @@
+﻿@page "/leaderboard"
+@using WorldCup.Models
+@using WorldCup.Services
+@implements IDisposable
+@inject MatchService MatchSvc
+@inject PredictionService PredSvc
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-3">
+
+    <!-- ── Swipeable Live / Recent Match Banner ── -->
+    <MudText Typo="Typo.overline" Class="section-label">MATCHES</MudText>
+
+    <div class="swipe-container" @ref="_swipeEl"
+         @ontouchstart="OnTouchStart" @ontouchend="OnTouchEnd">
+        @if (_allMatches.Any())
+        {
+            var m = _allMatches[_swipeIndex];
+            <MudPaper Class="live-banner mb-1" Elevation="6">
+                <div class="banner-header">
+                    @if (m.IsLive)
+                    {
+                        <div class="live-chip">
+                            <span class="live-dot"></span> LIVE
+                        </div>
+                    }
+                    else if (m.IsFinished)
+                    {
+
+                        <span class="ft-chip">FT</span>
+                    }
+                    else
+                    {
+
+                        <span class="up-chip">UPCOMING</span>
+                    }
+                    <MudText Typo="Typo.caption" Class="ml-auto date-label">
+                        @m.LocalDateTime.ToString("MMM dd • HH:mm")
+                    </MudText>
+                </div>
+                <div class="banner-teams">
+                    <div class="banner-team">
+                        <div class="big-flag">🏳️</div>
+                        <MudText Typo="Typo.body2" Class="banner-name">@m.HomeTeamLabel</MudText>
+                    </div>
+                    <div class="banner-score">
+                        @if (m.IsLive || m.IsFinished)
+                        {
+                            <MudText Typo="Typo.h3" Class="big-score">
+                                @m.HomeScore
+                            </MudText>
+                            <MudText Typo="Typo.h5" Class="score-sep">:</MudText>
+                            <MudText Typo="Typo.h3" Class="big-score">
+                                @m.AwayScore
+                            </MudText>
+                        }
+                        else
+                        {
+                            <MudText Typo="Typo.h5" Class="vs-big">VS</MudText>
+                        }
+                    </div>
+                    <div class="banner-team">
+                        <div class="big-flag">🏳️</div>
+                        <MudText Typo="Typo.body2" Class="banner-name">@m.AwayTeamLabel</MudText>
+                    </div>
+                </div>
+                <!-- Swipe dots -->
+                <div class="swipe-dots">
+                    @for (int i = 0; i < _allMatches.Count; i++)
+                    {
+                        int idx = i;
+                        <span class="dot @(idx == _swipeIndex ? "dot-active" : "")"
+                              @onclick="() => _swipeIndex = idx"></span>
+                    }
+                </div>
+            </MudPaper>
+        }
+    </div>
+
+    <!-- ── Leaderboard Table ── -->
+    <MudText Typo="Typo.overline" Class="section-label mt-4">LEADERBOARD</MudText>
+
+    @if (_loading)
+    {
+        <MudProgressLinear Indeterminate Color="Color.Warning" />
+    }
+    else
+    {
+        @foreach (var entry in _leaderboard)
+        {
+            <MudPaper Class="lb-row mb-2 pa-3" Elevation="3">
+                <div class="lb-rank @RankClass(entry.Rank)">@entry.Rank</div>
+                <MudAvatar Class="lb-avatar" Size="Size.Small">
+                    @(string.IsNullOrEmpty(entry.AvatarUrl)
+                        ? entry.DisplayName[..1].ToUpper()
+                        : "")
+                </MudAvatar>
+                <div class="lb-info ml-2">
+                    <MudText Typo="Typo.body2" Class="font-weight-bold lb-name">
+                        @entry.DisplayName
+                    </MudText>
+                    <div class="last5">
+                        @foreach (var r in entry.Last5)
+                        {
+                            <span class="r5-chip r5-@r.ToLower()">@r</span>
+                        }
+                    </div>
+                </div>
+                <MudText Typo="Typo.h6" Class="ml-auto gold-text font-weight-bold">
+                    @entry.TotalPoints
+                    <MudText Typo="Typo.caption" Class="pts-label">pts</MudText>
+                </MudText>
+            </MudPaper>
+        }
+    }
+
+</MudContainer>
+
+<style>
+    .section-label {
+        color: #4A6080;
+        letter-spacing: 2px;
+        font-size: 10px;
+    }
+
+    /* Live banner */
+    .swipe-container {
+        touch-action: pan-y;
+    }
+
+    .live-banner {
+        background: linear-gradient(135deg, #0A1628 0%, #0F2040 100%);
+        border-radius: 16px;
+        border: 1px solid #1E3A5F;
+        overflow: hidden;
+        padding: 12px;
+    }
+
+    .banner-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .live-chip {
+        display: inline-flex;
+        align-items: center;
+        background: #FF3B3B;
+        border-radius: 20px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 800;
+        color: white;
+    }
+
+    .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: white;
+        margin-right: 5px;
+        animation: pulse 1s infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1
+        }
+
+        50% {
+            opacity: 0.3
+        }
+    }
+
+    .ft-chip {
+        background: #1A3320;
+        color: #4CAF50;
+        border-radius: 12px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .up-chip {
+        background: #1E3A5F;
+        color: #8BA3BF;
+        border-radius: 12px;
+        padding: 3px 10px;
+        font-size: 11px;
+        font-weight: 700;
+    }
+
+    .date-label {
+        color: #4A6080;
+    }
+
+    .banner-teams {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .banner-team {
+        flex: 1;
+        text-align: center;
+    }
+
+    .big-flag {
+        font-size: 48px;
+    }
+
+    .banner-name {
+        color: #F0EDE6;
+        font-size: 12px;
+        margin-top: 4px;
+    }
+
+    .banner-score {
+        flex: 0 0 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+    }
+
+    .big-score {
+        color: #C9A84C;
+        font-weight: 900;
+    }
+
+    .score-sep {
+        color: #4A6080;
+    }
+
+    .vs-big {
+        color: #4A6080;
+        font-weight: 700;
+    }
+
+    .swipe-dots {
+        display: flex;
+        justify-content: center;
+        gap: 6px;
+        margin-top: 12px;
+    }
+
+    .dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: #1E3A5F;
+        cursor: pointer;
+        transition: all .2s;
+    }
+
+    .dot-active {
+        background: #C9A84C;
+        width: 18px;
+        border-radius: 4px;
+    }
+
+    /* Leaderboard rows */
+    .lb-row {
+        background: #0F1E33;
+        border-radius: 12px;
+        border: 1px solid #1E3A5F;
+        display: flex;
+        align-items: center;
+    }
+
+    .lb-rank {
+        width: 28px;
+        height: 28px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 13px;
+    }
+
+    .rank-1 {
+        background: #C9A84C;
+        color: #060E1C;
+    }
+
+    .rank-2 {
+        background: #9CA3AF;
+        color: #060E1C;
+    }
+
+    .rank-3 {
+        background: #CD7F32;
+        color: #060E1C;
+    }
+
+    .rank-other {
+        background: #1E3A5F;
+        color: #8BA3BF;
+    }
+
+    .lb-avatar {
+        background: #1E3A5F;
+        color: #C9A84C;
+    }
+
+    .lb-name {
+        color: #F0EDE6;
+    }
+
+    .pts-label {
+        color: #8BA3BF;
+        font-size: 10px;
+    }
+
+    .gold-text {
+        color: #C9A84C !important;
+    }
+
+    .last5 {
+        display: flex;
+        gap: 3px;
+        margin-top: 2px;
+    }
+
+    .r5-chip {
+        padding: 1px 5px;
+        border-radius: 4px;
+        font-size: 9px;
+        font-weight: 700;
+    }
+
+    .r5-w {
+        background: #1A3320;
+        color: #4CAF50;
+    }
+
+    .r5-d {
+        background: #1E2E1E;
+        color: #FFC107;
+    }
+
+    .r5-l {
+        background: #2D1515;
+        color: #F44336;
+    }
+</style>
+
+@code {
+    private List<Match> _allMatches = [];
+    private List<LeaderboardEntry> _leaderboard = [];
+    private bool _loading = true;
+    private int _swipeIndex;
+
+    // Touch tracking for swipe
+    private double _touchStartX;
+    private ElementReference _swipeEl;
+
+    protected override async Task OnInitializedAsync()
+    {
+        MatchSvc.OnMatchesUpdated += OnMatchesUpdated;
+        BuildMatchList();
+        _leaderboard = await PredSvc.GetLeaderboardAsync();
+        _loading = false;
+    }
+
+    private void BuildMatchList()
+    {
+        // Show live first, then upcoming, then recent finished
+        _allMatches = [
+            ..MatchSvc.Live,
+            ..MatchSvc.Upcoming.Take(5),
+            ..MatchSvc.Finished.Take(5)
+        ];
+        if (_swipeIndex >= _allMatches.Count)
+            _swipeIndex = 0;
+    }
+
+    private void OnMatchesUpdated()
+    {
+        BuildMatchList();
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void OnTouchStart(TouchEventArgs e)
+        => _touchStartX = e.ChangedTouches[0].ClientX;
+
+    private void OnTouchEnd(TouchEventArgs e)
+    {
+        var delta = e.ChangedTouches[0].ClientX - _touchStartX;
+        if (delta < -50 && _swipeIndex < _allMatches.Count - 1) _swipeIndex++;
+        if (delta > 50 && _swipeIndex > 0) _swipeIndex--;
+    }
+
+    private string RankClass(int rank) => rank switch
+    {
+        1 => "rank-1",
+        2 => "rank-2",
+        3 => "rank-3",
+        _ => "rank-other"
+    };
+
+    public void Dispose()
+        => MatchSvc.OnMatchesUpdated -= OnMatchesUpdated;
+}

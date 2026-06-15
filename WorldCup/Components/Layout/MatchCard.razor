@@ -1,0 +1,286 @@
+﻿@using WorldCup.Models
+@using WorldCup.Services
+@inject PredictionService PredSvc
+@inject UserSessionService Session
+
+<MudPaper Class="match-card mb-3 pa-0" Elevation="4">
+
+    <!-- Status bar -->
+    <div class="match-status-bar @StatusClass">
+        <MudText Typo="Typo.caption" Class="font-weight-bold">
+            @StatusLabel
+        </MudText>
+        <MudText Typo="Typo.caption" Class="ml-auto">
+            @Match.Group  •  @Match.LocalDateTime.ToString("MMM dd, HH:mm")
+        </MudText>
+    </div>
+
+    <!-- Teams + Score -->
+    <div class="match-body pa-3">
+        <!-- Home -->
+        <div class="team-block">
+            <div class="team-flag-placeholder">🏳️</div>
+            <MudText Typo="Typo.body1" Class="team-name mt-1">
+                @Match.HomeTeamLabel
+            </MudText>
+        </div>
+
+        <!-- Score / VS -->
+        <div class="score-block">
+            @if (Match.IsFinished || Match.IsLive)
+            {
+                <MudText Typo="Typo.h4" Class="score-text">
+                    @Match.HomeScore – @Match.AwayScore
+                </MudText>
+                @if (Match.IsLive)
+                {
+                    <div class="live-badge">
+                        <span class="live-dot"></span> LIVE
+                    </div>
+                }
+            }
+            else
+            {
+                <MudText Typo="Typo.h6" Class="vs-text">VS</MudText>
+            }
+        </div>
+
+        <!-- Away -->
+        <div class="team-block">
+            <div class="team-flag-placeholder">🏳️</div>
+            <MudText Typo="Typo.body1" Class="team-name mt-1">
+                @Match.AwayTeamLabel
+            </MudText>
+        </div>
+    </div>
+
+    <!-- Prediction row (only if logged in & match not finished) -->
+    @if (Session.IsLoggedIn && !Match.IsFinished)
+    {
+        <MudDivider Class="card-divider" />
+        <div class="predict-row pa-3">
+            <MudText Typo="Typo.caption" Class="predict-label">YOUR PREDICTION</MudText>
+            <div class="predict-inputs mt-1">
+                <MudNumericField @bind-Value="_homeGuess" Min="0" Max="20"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 Class="score-input" />
+                <MudText Typo="Typo.body1" Class="predict-dash">–</MudText>
+                <MudNumericField @bind-Value="_awayGuess" Min="0" Max="20"
+                                 Variant="Variant.Outlined" Margin="Margin.Dense"
+                                 Class="score-input" />
+                <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                           Size="Size.Small" Class="ml-2"
+                           OnClick="SavePrediction">Save</MudButton>
+            </div>
+            @if (_saved)
+            {
+                <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-1">
+                    ✓ Prediction saved
+                </MudText>
+            }
+        </div>
+    }
+    else if (Session.IsLoggedIn && Match.IsFinished && _prediction is not null)
+    {
+        <MudDivider Class="card-divider" />
+        <div class="predict-row pa-3">
+            <MudText Typo="Typo.caption" Class="predict-label">
+                YOUR PICK:
+                <strong>@_prediction.PredictedHome – @_prediction.PredictedAway</strong>
+            </MudText>
+            @if (_prediction.PointsEarned.HasValue)
+            {
+                <MudChip T="string" Color="@PointsColor(_prediction.PointsEarned.Value)"
+                         Size="Size.Small" Class="ml-2">
+                    +@_prediction.PointsEarned pts
+                </MudChip>
+            }
+        </div>
+    }
+
+</MudPaper>
+
+<style>
+    .match-card {
+        background: #a2a8b1;
+        border-radius: 14px;
+        overflow: hidden;
+        border: 1px solid #1E3A5F;
+    }
+
+    .match-status-bar {
+        display: flex;
+        align-items: center;
+        padding: 6px 12px;
+        font-size: 11px;
+    }
+
+    .status-upcoming {
+        background: #1E3A5F;
+        color: #8BA3BF;
+    }
+
+    .status-live {
+        background: #7B1E1E;
+        color: #FF6B6B;
+    }
+
+    .status-finished {
+        background: #d9e1d9;
+        color: #4CAF50;
+    }
+
+    .match-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .team-block {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+
+    .team-flag-placeholder {
+        font-size: 36px;
+    }
+
+    .team-name {
+        color: #F0EDE6;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .score-block {
+        flex: 0 0 80px;
+        text-align: center;
+    }
+
+    .score-text {
+        color: #C9A84C;
+        font-weight: 800;
+    }
+
+    .vs-text {
+        color: #4A6080;
+        font-weight: 700;
+    }
+
+    .live-badge {
+        display: inline-flex;
+        align-items: center;
+        background: #FF3B3B;
+        border-radius: 20px;
+        padding: 2px 8px;
+        font-size: 10px;
+        font-weight: 800;
+        color: white;
+        margin-top: 4px;
+    }
+
+    .live-dot {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: white;
+        margin-right: 4px;
+        animation: pulse 1s infinite;
+    }
+
+    @@keyframes pulse {
+        0%, 100% {
+            opacity: 1
+        }
+
+        50% {
+            opacity: 0.3
+        }
+    }
+
+    .card-divider {
+        border-color: #1E3A5F !important;
+    }
+
+    .predict-row {
+        background: #0A1628;
+    }
+
+    .predict-label {
+        color: #8BA3BF;
+        letter-spacing: 1px;
+        font-size: 10px;
+    }
+
+    .predict-inputs {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+    }
+
+    .score-input {
+        width: 56px;
+    }
+
+    .predict-dash {
+        color: #C9A84C;
+        font-weight: 700;
+    }
+</style>
+
+@code {
+    [Parameter] public Match Match { get; set; } = null!;
+    [Parameter] public EventCallback OnPredictionSaved { get; set; }
+
+    private int _homeGuess;
+    private int _awayGuess;
+    private bool _saved;
+    private Prediction? _prediction;
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (Session.IsLoggedIn)
+        {
+            _prediction = await PredSvc.GetPredictionAsync(
+                Session.CurrentUser!.Id, Match.Id);
+            if (_prediction is not null)
+            {
+                _homeGuess = _prediction.PredictedHome;
+                _awayGuess = _prediction.PredictedAway;
+            }
+        }
+    }
+
+    private async Task SavePrediction()
+    {
+        await PredSvc.UpsertPredictionAsync(
+            Session.CurrentUser!.Id, Match.Id, _homeGuess, _awayGuess);
+        _saved = true;
+        await OnPredictionSaved.InvokeAsync();
+        await Task.Delay(2000);
+        _saved = false;
+    }
+
+    private string StatusClass => Match.Status switch
+    {
+        MatchStatus.Live => "status-live",
+        MatchStatus.Finished => "status-finished",
+        _ => "status-upcoming"
+    };
+
+    private string StatusLabel => Match.Status switch
+    {
+        MatchStatus.Live => $"🔴 {Match.TimeElapsed}'",
+        MatchStatus.Finished => "✓ FT",
+        _ => "Upcoming"
+    };
+
+    private Color PointsColor(int pts) => pts switch
+    {
+        3 => Color.Success,
+        1 => Color.Warning,
+        _ => Color.Error
+    };
+}

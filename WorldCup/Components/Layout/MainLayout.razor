@@ -1,0 +1,57 @@
+﻿
+
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+
+@* <MudThemeProvider Theme="@_theme" /> *@
+<MudThemeProvider  />
+<MudSnackbarProvider />
+<MudDialogProvider />
+
+<MudLayout>
+    <MudMainContent Class="pb-16">
+        @Body
+    </MudMainContent>
+
+    <!-- ── Bottom Navigation Bar ── -->
+    <MudPaper Elevation="8" Class="bottom-nav" Square>
+        <MudGrid Justify="Justify.SpaceEvenly" Class="pa-0 ma-0">
+            <NavMenu Icon="@Icons.Material.Rounded.SportsSoccer"
+                     Label="Matches" Href="/" />
+            <NavMenu Icon="@Icons.Material.Rounded.Leaderboard"
+                     Label="Leaderboard" Href="/leaderboard" />
+            <NavMenu Icon="@Icons.Material.Rounded.Person"
+                     Label="Profile" Href="/settings" />
+        </MudGrid>
+    </MudPaper>
+</MudLayout>
+
+<style>
+    .bottom-nav {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: #0A1628 !important;
+        border-top: 1px solid #1E3A5F;
+        z-index: 1000;
+    }
+</style>
+
+@code {
+    private MudTheme _theme = new()
+    {
+        PaletteLight = new PaletteLight
+        {
+            Primary        = "#C9A84C",   // World Cup gold
+            Secondary      = "#1E3A5F",   // deep navy
+            Background     = "#060E1C",   // near-black pitch
+            Surface        = "#0F1E33",
+            AppbarBackground = "#0A1628",
+            TextPrimary    = "#F0EDE6",
+            TextSecondary  = "#8BA3BF",
+            DrawerBackground = "#0A1628",
+        }
+    };
+}

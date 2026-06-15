@@ -1,0 +1,57 @@
+﻿@page "/"
+@using WorldCup.Services
+@implements IDisposable
+@inject MatchService     MatchSvc
+@inject PredictionService PredSvc
+@inject UserSessionService Session
+@inject ISnackbar        Snackbar
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-3">
+
+    <!-- Header -->
+    <MudText Typo="Typo.h5" Class="gold-text mb-3 font-weight-bold">
+        ⚽ World Cup 2026
+    </MudText>
+
+    <!-- Tabs: Upcoming / Live / Past -->
+    <MudTabs Elevation="0" Rounded ApplyEffectsToContainer
+             Class="tab-bar mb-3" ActiveTabClass="active-tab">
+        <MudTabPanel Text="Upcoming">
+            @foreach (var m in MatchSvc.Upcoming)
+            {
+                <MatchCard Match="m" OnPredictionSaved="HandleSaved" />
+            }
+            @if (!MatchSvc.Upcoming.Any())
+                { <EmptyState Message="No upcoming matches" /> }
+        </MudTabPanel>
+
+        <MudTabPanel Text="🔴 Live">
+            @foreach (var m in MatchSvc.Live)
+            {
+                <MatchCard Match="m" OnPredictionSaved="HandleSaved" />
+            }
+            @if (!MatchSvc.Live.Any())
+                { <EmptyState Message="No live matches right now" /> }
+        </MudTabPanel>
+
+        <MudTabPanel Text="Results">
+            @foreach (var m in MatchSvc.Finished)
+            {
+                <MatchCard Match="m" OnPredictionSaved="HandleSaved" />
+            }
+            @if (!MatchSvc.Finished.Any())
+                { <EmptyState Message="No completed matches yet" /> }
+        </MudTabPanel>
+    </MudTabs>
+
+</MudContainer>
+
+@code {
+    protected override void OnInitialized()
+        => MatchSvc.OnMatchesUpdated += StateHasChanged;
+
+    private void HandleSaved() => Snackbar.Add("Prediction saved!", Severity.Success);
+
+    public void Dispose()
+        => MatchSvc.OnMatchesUpdated -= StateHasChanged;
+}

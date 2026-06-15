@@ -1,0 +1,21 @@
+﻿@inject NavigationManager Nav
+
+<MudItem xs="4" Class="d-flex flex-column align-center justify-center pa-0">
+    <MudIconButton Icon="@Icon"
+                   Color="@(IsActive ? Color.Warning : Color.Default)"
+                   OnClick="Navigate"
+                   Size="Size.Medium" />
+    <MudText Typo="Typo.caption"
+             Color="@(IsActive ? Color.Warning : Color.Default)"
+             Class="mt-n1">@Label</MudText>
+</MudItem>
+
+@code {
+    [Parameter] public string Icon { get; set; } = "";
+    [Parameter] public string Label { get; set; } = "";
+    [Parameter] public string Href { get; set; } = "";
+
+    private bool IsActive => Nav.Uri.TrimEnd('/').EndsWith(Href.TrimEnd('/'));
+
+    private void Navigate() => Nav.NavigateTo(Href);
+}
