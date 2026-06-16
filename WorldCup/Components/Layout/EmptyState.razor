@@ -1,0 +1,16 @@
+﻿<div class="empty-state">
+    <MudText Typo="Typo.h4">⚽</MudText>
+    <MudText Typo="Typo.body2" Class="mt-2">@Message</MudText>
+</div>
+
+<style>
+.empty-state {
+    text-align: center;
+    padding: 48px 16px;
+    color: #4A6080;
+}
+</style>
+
+@code {
+    [Parameter] public string Message { get; set; } = "Nothing here yet";
+}

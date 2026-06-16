@@ -25,12 +25,12 @@ html, body {
 
 /* MudBlazor overrides for dark pitch theme */
 .mud-paper {
-    background-color: #0F1E33 !important;
+    background-color: #f8f4f1 !important;
     color: #F0EDE6 !important;
 }
 
 .mud-input-root {
-    color: #F0EDE6 !important;
+    color: #262523 !important;
 }
 
 .mud-input-outlined-input {

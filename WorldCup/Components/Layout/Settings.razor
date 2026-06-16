@@ -1,0 +1,132 @@
+﻿@page "/settings"
+@using WorldCup.Services
+@inject UserSessionService Session
+@inject ISnackbar           Snackbar
+@inject NavigationManager   Nav
+
+<MudContainer MaxWidth="MaxWidth.Small" Class="pa-4">
+
+    <MudText Typo="Typo.h5" Class="gold-text mb-4 font-weight-bold">⚙️ Profile</MudText>
+
+    @if (!Session.IsLoggedIn)
+    {
+        <!-- ── Register / Login form ── -->
+        <MudPaper Class="pa-4 login-card" Elevation="6">
+            <MudText Typo="Typo.h6" Class="mb-3 text-center">Join the Predictor</MudText>
+            <MudTextField @bind-Value="_username" Label="Username"
+                          Variant="Variant.Outlined" Class="mb-3"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Rounded.AlternateEmail" />
+            <MudTextField @bind-Value="_displayName" Label="Display Name"
+                          Variant="Variant.Outlined" Class="mb-4"
+                          Adornment="Adornment.Start"
+                          AdornmentIcon="@Icons.Material.Rounded.Badge" />
+            <MudButton FullWidth Variant="Variant.Filled" Color="Color.Warning"
+                       Size="Size.Large" OnClick="Login" Disabled="_busy">
+                @if (_busy) { <MudProgressCircular Size="Size.Small" Indeterminate /> }
+                else        { <span>Enter &amp; Predict</span> }
+            </MudButton>
+        </MudPaper>
+    }
+    else
+    {
+        <!-- ── Profile card ── -->
+        <MudPaper Class="pa-4 profile-card mb-4" Elevation="6">
+            <div class="profile-header">
+                <MudAvatar Class="big-avatar" Size="Size.Large">
+                    @Session.CurrentUser!.DisplayName[..1].ToUpper()
+                </MudAvatar>
+                <div class="ml-3">
+                    <MudText Typo="Typo.h6" Class="font-weight-bold">
+                        @Session.CurrentUser.DisplayName
+                    </MudText>
+                    <MudText Typo="Typo.body2" Class="username-text">
+                        @@@Session.CurrentUser.Username
+                    </MudText>
+                </div>
+            </div>
+            <MudDivider Class="my-3 divider-dark" />
+            <div class="stats-row">
+                <div class="stat-box">
+                    <MudText Typo="Typo.h5" Class="gold-text font-weight-black">
+                        @Session.CurrentUser.TotalPoints
+                    </MudText>
+                    <MudText Typo="Typo.caption" Class="stat-label">TOTAL PTS</MudText>
+                </div>
+            </div>
+        </MudPaper>
+
+        <!-- ── Edit profile ── -->
+        <MudPaper Class="pa-4 profile-card mb-4" Elevation="4">
+            <MudText Typo="Typo.subtitle2" Class="section-label mb-3">EDIT PROFILE</MudText>
+            <MudTextField @bind-Value="_displayName" Label="Display Name"
+                          Variant="Variant.Outlined" Class="mb-3" />
+            <MudButton Variant="Variant.Filled" Color="Color.Warning"
+                       OnClick="SaveProfile">Save Changes</MudButton>
+        </MudPaper>
+
+        <!-- ── Danger zone ── -->
+        <MudButton FullWidth Variant="Variant.Outlined" Color="Color.Error"
+                   StartIcon="@Icons.Material.Rounded.Logout"
+                   OnClick="Logout" Class="mt-2">
+            Sign Out
+        </MudButton>
+    }
+
+</MudContainer>
+
+<style>
+.login-card, .profile-card {
+    background: #0F1E33 !important;
+    border-radius: 16px;
+    border: 1px solid #1E3A5F;
+}
+.profile-header { display: flex; align-items: center; }
+.big-avatar { width: 60px; height: 60px; background: #C9A84C; color: #060E1C; font-size: 24px; font-weight: 800; }
+.username-text { color: #4A6080; }
+.divider-dark  { border-color: #1E3A5F !important; }
+.stats-row { display: flex; gap: 16px; }
+.stat-box  { text-align: center; flex: 1; background: #0A1628; border-radius: 10px; padding: 12px; }
+.stat-label { color: #4A6080; letter-spacing: 1px; font-size: 10px; }
+.section-label { color: #4A6080; letter-spacing: 2px; font-size: 10px; }
+.gold-text { color: #C9A84C !important; }
+</style>
+
+@code {
+    private string _username    = "";
+    private string _displayName = "";
+    private bool   _busy;
+
+    protected override void OnInitialized()
+    {
+        if (Session.IsLoggedIn)
+            _displayName = Session.CurrentUser!.DisplayName;
+    }
+
+    private async Task Login()
+    {
+        if (string.IsNullOrWhiteSpace(_username) || string.IsNullOrWhiteSpace(_displayName))
+        {
+            Snackbar.Add("Fill in both fields", Severity.Warning);
+            return;
+        }
+        _busy = true;
+        await Session.LoginOrRegisterAsync(_username, _displayName);
+        _busy = false;
+        Snackbar.Add($"Welcome, {Session.CurrentUser!.DisplayName}!", Severity.Success);
+        Nav.NavigateTo("/");
+    }
+
+    private async Task SaveProfile()
+    {
+        await Session.UpdateProfileAsync(_displayName, Session.CurrentUser!.AvatarUrl);
+        Snackbar.Add("Profile updated!", Severity.Success);
+    }
+
+    private void Logout()
+    {
+        Session.Logout();
+        _username = _displayName = "";
+        Snackbar.Add("Signed out", Severity.Info);
+    }
+}

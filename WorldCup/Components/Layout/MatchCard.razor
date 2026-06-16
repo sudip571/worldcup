@@ -56,30 +56,52 @@
 
     <!-- Prediction row (only if logged in & match not finished) -->
     @if (Session.IsLoggedIn && !Match.IsFinished)
-    {
-        <MudDivider Class="card-divider" />
-        <div class="predict-row pa-3">
-            <MudText Typo="Typo.caption" Class="predict-label">YOUR PREDICTION</MudText>
-            <div class="predict-inputs mt-1">
-                <MudNumericField @bind-Value="_homeGuess" Min="0" Max="20"
-                                 Variant="Variant.Outlined" Margin="Margin.Dense"
-                                 Class="score-input" />
-                <MudText Typo="Typo.body1" Class="predict-dash">–</MudText>
-                <MudNumericField @bind-Value="_awayGuess" Min="0" Max="20"
-                                 Variant="Variant.Outlined" Margin="Margin.Dense"
-                                 Class="score-input" />
-                <MudButton Variant="Variant.Filled" Color="Color.Warning"
-                           Size="Size.Small" Class="ml-2"
-                           OnClick="SavePrediction">Save</MudButton>
-            </div>
-            @if (_saved)
-            {
-                <MudText Typo="Typo.caption" Color="Color.Success" Class="mt-1">
-                    ✓ Prediction saved
-                </MudText>
-            }
+{
+    <MudDivider Class="card-divider" />
+
+    <div class="prediction-bar pa-2">
+        <MudText Typo="Typo.caption" Class="predict-label">
+            YOUR PREDICTION
+        </MudText>
+
+        <div class="prediction-content">
+            <MudNumericField @bind-Value="_homeGuess"
+                             Min="0"
+                             Max="20"
+                             HideSpinButtons="true"
+                             Variant="Variant.Text"
+                             Margin="Margin.Dense"
+                             Class="prediction-score" />
+
+            <MudText Class="predict-separator">-</MudText>
+
+            <MudNumericField @bind-Value="_awayGuess"
+                             Min="0"
+                             Max="20"
+                             HideSpinButtons="true"
+                             Variant="Variant.Text"
+                             Margin="Margin.Dense"
+                             Class="prediction-score" />
+
+            <MudButton Variant="Variant.Filled"
+                       Color="Color.Warning"
+                       Size="Size.Small"
+                       Class="save-prediction-btn"
+                       OnClick="SavePrediction">
+                Save
+            </MudButton>
         </div>
-    }
+
+        @if (_saved)
+        {
+            <MudText Typo="Typo.caption"
+                     Color="Color.Success"
+                     Class="saved-text">
+                ✓ Saved
+            </MudText>
+        }
+    </div>
+}
     else if (Session.IsLoggedIn && Match.IsFinished && _prediction is not null)
     {
         <MudDivider Class="card-divider" />
@@ -102,7 +124,7 @@
 
 <style>
     .match-card {
-        background: #a2a8b1;
+        background: #f8f4f1;
         border-radius: 14px;
         overflow: hidden;
         border: 1px solid #1E3A5F;
@@ -116,8 +138,8 @@
     }
 
     .status-upcoming {
-        background: #1E3A5F;
-        color: #8BA3BF;
+        background: #f8f4f1;
+        color: #404040;
     }
 
     .status-live {
@@ -126,8 +148,8 @@
     }
 
     .status-finished {
-        background: #d9e1d9;
-        color: #4CAF50;
+        background: #f8f4f1;
+        color: #404040;
     }
 
     .match-body {
@@ -149,7 +171,7 @@
     }
 
     .team-name {
-        color: #F0EDE6;
+        color: #404040;
         font-size: 12px;
         font-weight: 600;
     }
@@ -205,7 +227,7 @@
     }
 
     .predict-row {
-        background: #0A1628;
+        background: #f8f4f1;
     }
 
     .predict-label {
@@ -228,6 +250,64 @@
         color: #C9A84C;
         font-weight: 700;
     }
+
+    .prediction-bar {
+    background: #f8f4f1;
+}
+
+.prediction-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.predict-label {
+    color: #8BA3BF;
+    font-size: 10px;
+    letter-spacing: .8px;
+    font-weight: 600;
+}
+
+.prediction-score {
+    width: 42px;
+}
+
+.prediction-score .mud-input-slot {
+    justify-content: center;
+}
+
+.prediction-score input {
+    text-align: center;
+    background: white;
+    border: 1px solid #D9D9D9;
+    border-radius: 10px;
+    height: 34px;
+    padding: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #1E3A5F;
+}
+
+.predict-separator {
+    font-weight: 700;
+    color: #C9A84C;
+    font-size: 18px;
+}
+
+.save-prediction-btn {
+    min-width: 70px;
+    height: 34px;
+    border-radius: 18px;
+    text-transform: none;
+    font-weight: 600;
+    margin-left: auto;
+}
+
+.saved-text {
+    margin-top: 4px;
+    font-size: 11px;
+}
 </style>
 
 @code {
